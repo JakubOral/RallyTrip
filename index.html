@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#000000" />
+<meta name="theme-color" content="#0a1a2a" />
 <title>RALLY TRIPMETER</title>
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="apple-touch-icon" href="icons/icon.svg" />
@@ -15,8 +15,8 @@
 </head>
 <body>
 
-<!-- LOGIN -->
-<section id="login" class="screen active">
+<!-- LOGIN (disabled — auto-skipped by app.js) -->
+<section id="login" class="screen">
   <div class="login-box">
     <h1>RALLY<br><span>TRIPMETER</span></h1>
     <div id="pinDisplay" class="pin-dots">
@@ -36,7 +36,7 @@
 </section>
 
 <!-- MAIN APP -->
-<section id="app" class="screen">
+<section id="app" class="screen active">
 
   <header class="topbar">
     <div class="mode-switch">
@@ -50,38 +50,51 @@
     </div>
   </header>
 
-  <!-- SPEED + LIMIT -->
-  <div class="speed-row">
-    <div class="speed-box">
-      <div class="label">SPEED km/h</div>
-      <div id="speed" class="big-num">0</div>
+  <!-- MONIT-STYLE TRIPMETER PANEL (main focus) -->
+  <div class="monit" id="monit">
+    <div class="monit-side left">
+      <div class="side-icon" id="iconMode">▲</div>
+      <div class="side-icon flex" title="Reset both">↔</div>
     </div>
-    <div class="limit-box" id="limitBox">
-      <div class="label">LIMIT</div>
-      <div id="limit" class="big-num">--</div>
+
+    <div class="monit-screen">
+      <div class="trip-row trip-a" id="tripAWrap">
+        <div class="trip-num" id="tripA">0.00</div>
+      </div>
+      <div class="trip-row trip-b" id="tripBWrap">
+        <div class="trip-num" id="tripB">0.00</div>
+        <div class="trip-unit">dist</div>
+      </div>
+    </div>
+
+    <div class="monit-side right">
+      <button class="side-btn" id="btnClr"><span>CLR</span></button>
+      <button class="side-btn" id="btnModeSide"><span>MODE</span></button>
     </div>
   </div>
 
-  <!-- TRIP A -->
-  <div class="trip trip-a" id="tripAWrap">
-    <div class="trip-head">
-      <span class="trip-label">TRIP A</span>
-      <span class="trip-unit">km</span>
-      <button class="trip-action" data-trip="A">RESET</button>
-    </div>
-    <div id="tripA" class="trip-num">0.00</div>
-    <div id="tripAStage" class="trip-sub hidden">STAGE: <span>0.00</span> km</div>
+  <!-- QUICK RESET ROW -->
+  <div class="reset-row">
+    <button class="reset-btn trip-a" data-trip="A">RESET A</button>
+    <button class="reset-btn trip-b" data-trip="B">RESET B</button>
   </div>
 
-  <!-- TRIP B -->
-  <div class="trip trip-b" id="tripBWrap">
-    <div class="trip-head">
-      <span class="trip-label">TRIP B</span>
-      <span class="trip-unit">km</span>
-      <button class="trip-action" data-trip="B">RESET</button>
+  <!-- FLOATING SPEED GAUGE (bottom-left overlay) -->
+  <div class="gauge-float" id="gaugeFloat">
+    <div class="speed-circle" id="speedCircle">
+      <svg class="speed-ring" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="54" class="ring-bg"></circle>
+        <circle cx="60" cy="60" r="54" class="ring-fg" id="speedRing"
+          stroke-dasharray="339.3" stroke-dashoffset="339.3"></circle>
+      </svg>
+      <div class="speed-inner">
+        <div id="speed" class="speed-val">0</div>
+        <div class="speed-unit">km/h</div>
+      </div>
     </div>
-    <div id="tripB" class="trip-num">0.00</div>
-    <div id="tripBStage" class="trip-sub hidden">STAGE: <span>0.00</span> km</div>
+    <div class="limit-sign" id="limitSign">
+      <div id="limit">--</div>
+    </div>
   </div>
 
   <!-- EXTRA INFO -->
@@ -118,15 +131,28 @@
     </div>
 
     <div class="menu-group">
-      <h3>SETTINGS</h3>
-      <label class="row">Units
-        <select id="units"><option value="km">km</option><option value="mi">miles</option></select>
+      <h3>ALERTS</h3>
+      <label class="row">Sound on over-limit
+        <input type="checkbox" id="alertSound" checked />
       </label>
+      <label class="row">Vibrate on over-limit
+        <input type="checkbox" id="alertVibe" checked />
+      </label>
+      <label>Tolerance (+ km/h over limit)
+        <input type="number" id="tolerance" step="1" min="0" max="30" value="3" />
+      </label>
+    </div>
+
+    <div class="menu-group">
+      <h3>SETTINGS</h3>
       <label class="row">Keep screen on
         <input type="checkbox" id="wakeLock" checked />
       </label>
       <label class="row">Speed limits (OSM)
         <input type="checkbox" id="limitsOn" checked />
+      </label>
+      <label>Max speed (gauge)
+        <input type="number" id="maxGauge" step="10" min="60" max="300" value="180" />
       </label>
     </div>
 

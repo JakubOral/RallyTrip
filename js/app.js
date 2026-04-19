@@ -1,4 +1,4 @@
-/* RALLY TRIPMETER — app.js */
+/* RALLY TRIPMETER — app.js (Monit + Waze style) */
 
 const STORE = {
   pin: 'rt_pin',
@@ -8,9 +8,12 @@ const STORE = {
   stageA: 'rt_stageA',
   stageB: 'rt_stageB',
   calib: 'rt_calib',
-  units: 'rt_units',
   limitsOn: 'rt_limitsOn',
   wakeOn: 'rt_wakeOn',
+  alertSound: 'rt_alertSound',
+  alertVibe: 'rt_alertVibe',
+  tolerance: 'rt_tolerance',
+  maxGauge: 'rt_maxGauge',
 };
 
 const state = {
@@ -20,36 +23,36 @@ const state = {
   stageA: parseFloat(localStorage.getItem(STORE.stageA)) || 0,
   stageB: parseFloat(localStorage.getItem(STORE.stageB)) || 0,
   calib: parseFloat(localStorage.getItem(STORE.calib)) || 1.000,
-  units: localStorage.getItem(STORE.units) || 'km',
   limitsOn: localStorage.getItem(STORE.limitsOn) !== 'false',
   wakeOn: localStorage.getItem(STORE.wakeOn) !== 'false',
-  speed: 0,         // km/h
-  avgSpeed: 0,
-  maxSpeed: 0,
-  heading: null,
-  altitude: 0,
+  alertSound: localStorage.getItem(STORE.alertSound) !== 'false',
+  alertVibe: localStorage.getItem(STORE.alertVibe) !== 'false',
+  tolerance: parseInt(localStorage.getItem(STORE.tolerance), 10),
+  maxGauge: parseInt(localStorage.getItem(STORE.maxGauge), 10) || 180,
+  speed: 0, avgSpeed: 0, maxSpeed: 0,
+  heading: null, altitude: 0,
   limit: null,
-  limitFetchedAt: 0,
-  limitFetchedPos: null,
-  lastPos: null,    // {lat, lon, t}
+  limitFetchedAt: 0, limitFetchedPos: null,
+  lastPos: null,
   running: false,
-  sumSpeed: 0,
-  sampleCount: 0,
+  sumSpeed: 0, sampleCount: 0,
   wakeLock: null,
+  overSince: 0,
+  lastBeepAt: 0,
+  wasOver: false,
+  sideClrCycle: 0,
 };
+if (isNaN(state.tolerance)) state.tolerance = 3;
 
 /* ================= LOGIN ================= */
 const pinEl = document.getElementById('pinDisplay');
 const pinMsg = document.getElementById('pinMsg');
 let pinBuf = '';
 
-function savedPin() {
-  return localStorage.getItem(STORE.pin) || '1234';
-}
+const savedPin = () => localStorage.getItem(STORE.pin) || '1234';
 
 function refreshPinDots() {
-  const dots = pinEl.querySelectorAll('span');
-  dots.forEach((d, i) => d.classList.toggle('filled', i < pinBuf.length));
+  pinEl.querySelectorAll('span').forEach((d, i) => d.classList.toggle('filled', i < pinBuf.length));
 }
 
 function handleKey(k) {
@@ -68,9 +71,7 @@ function handleKey(k) {
       pinBuf = '';
       setTimeout(refreshPinDots, 250);
     }
-  } else {
-    pinMsg.textContent = '';
-  }
+  } else pinMsg.textContent = '';
 }
 
 document.querySelectorAll('.keypad button').forEach(b => {
@@ -82,6 +83,7 @@ function showApp() {
   document.getElementById('login').classList.remove('active');
   document.getElementById('app').classList.add('active');
   state.running = true;
+  primeAudio();
   startGPS();
   startClock();
   if (state.wakeOn) acquireWakeLock();
@@ -103,6 +105,8 @@ function logout() {
 /* ================= MODE ================= */
 document.getElementById('btnRecce').addEventListener('click', () => setMode('recce'));
 document.getElementById('btnRace').addEventListener('click', () => setMode('race'));
+document.getElementById('btnModeSide').addEventListener('click',
+  () => setMode(state.mode === 'recce' ? 'race' : 'recce'));
 
 function setMode(m) {
   state.mode = m;
@@ -110,48 +114,48 @@ function setMode(m) {
   document.getElementById('btnRecce').classList.toggle('active', m === 'recce');
   document.getElementById('btnRace').classList.toggle('active', m === 'race');
   document.getElementById('raceSetup').style.display = m === 'race' ? 'block' : 'none';
+  document.getElementById('iconMode').textContent = m === 'race' ? '▼' : '▲';
   renderTrips();
 }
+
+/* Side CLR button cycles A → B → both */
+document.getElementById('btnClr').addEventListener('click', () => {
+  const target = ['A', 'B', 'AB'][state.sideClrCycle % 3];
+  state.sideClrCycle++;
+  if (target === 'A') resetTrip('A');
+  else if (target === 'B') resetTrip('B');
+  else { resetTrip('A'); resetTrip('B'); }
+});
+
+document.querySelectorAll('.reset-btn').forEach(btn => {
+  btn.addEventListener('click', () => resetTrip(btn.dataset.trip));
+});
 
 /* ================= GPS ================= */
 let watchId = null;
 
 function startGPS() {
-  if (!navigator.geolocation) {
-    gpsBadge(false, 'NO GEO');
-    return;
-  }
+  if (!navigator.geolocation) { gpsBadge(false, 'NO GEO'); return; }
   watchId = navigator.geolocation.watchPosition(onPos, onPosErr, {
-    enableHighAccuracy: true,
-    maximumAge: 500,
-    timeout: 15000,
+    enableHighAccuracy: true, maximumAge: 500, timeout: 15000,
   });
 }
-
 function stopGPS() {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
 }
-
 function gpsBadge(ok, txt) {
   const el = document.getElementById('gpsStatus');
   el.classList.toggle('ok', ok);
   el.classList.toggle('bad', !ok);
-  el.textContent = txt || (ok ? 'GPS' : 'GPS');
+  el.textContent = txt || 'GPS';
 }
-
-function onPosErr(err) {
-  gpsBadge(false, 'GPS ERR');
-}
+function onPosErr() { gpsBadge(false, 'GPS ERR'); }
 
 function onPos(pos) {
   const { latitude, longitude, speed, heading, altitude, accuracy } = pos.coords;
   const t = pos.timestamp;
   gpsBadge(true, accuracy ? `±${Math.round(accuracy)}m` : 'GPS');
 
-  // Speed: use provided (m/s) if available, else compute from positions
   let kmh = 0;
   if (typeof speed === 'number' && !isNaN(speed) && speed >= 0) {
     kmh = speed * 3.6;
@@ -161,7 +165,6 @@ function onPos(pos) {
     if (dt > 0) kmh = (d / dt) * 3.6;
   }
 
-  // Distance increment from last position
   if (state.lastPos && kmh >= 1.5) {
     const dKm = haversine(state.lastPos.lat, state.lastPos.lon, latitude, longitude) / 1000;
     const adj = dKm * state.calib;
@@ -173,7 +176,6 @@ function onPos(pos) {
   state.altitude = altitude || 0;
   if (typeof heading === 'number' && !isNaN(heading)) state.heading = heading;
 
-  // Stats
   if (kmh > 2) {
     state.sumSpeed += kmh;
     state.sampleCount++;
@@ -181,11 +183,11 @@ function onPos(pos) {
     if (kmh > state.maxSpeed) state.maxSpeed = kmh;
   }
 
-  // Speed limit fetch (throttled by distance + time)
   if (state.limitsOn && shouldFetchLimit(latitude, longitude, t)) {
     fetchSpeedLimit(latitude, longitude).catch(() => {});
   }
 
+  checkOverLimit();
   renderLive();
   persistTrips();
 }
@@ -211,7 +213,7 @@ function applyTripDelta(dKm) {
   }
 }
 
-/* ================= SPEED LIMIT (OSM Overpass) ================= */
+/* ================= SPEED LIMIT ================= */
 function shouldFetchLimit(lat, lon, t) {
   if (!state.limitFetchedPos) return true;
   if (t - state.limitFetchedAt < 15000) return false;
@@ -226,28 +228,71 @@ async function fetchSpeedLimit(lat, lon) {
   const url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(q);
   try {
     const r = await fetch(url);
-    if (!r.ok) throw 0;
+    if (!r.ok) return;
     const j = await r.json();
     const w = j.elements && j.elements[0];
     if (w && w.tags && w.tags.maxspeed) {
       const v = parseInt(w.tags.maxspeed, 10);
-      if (!isNaN(v)) {
-        state.limit = v;
-        renderLimit();
-        return;
-      }
+      if (!isNaN(v)) { state.limit = v; renderLimit(); return; }
     }
     state.limit = null;
     renderLimit();
-  } catch (e) {
-    // keep previous limit
+  } catch (e) { /* keep previous */ }
+}
+
+/* ================= OVER-LIMIT ALERT ================= */
+function checkOverLimit() {
+  if (state.limit == null) { state.wasOver = false; return; }
+  const over = state.speed > state.limit + state.tolerance;
+  if (over && !state.wasOver) {
+    triggerAlert(true);            // crossed the line → beep
+    state.overSince = Date.now();
+    state.lastBeepAt = Date.now();
+  } else if (over) {
+    if (Date.now() - state.lastBeepAt > 4000) {
+      triggerAlert(false);         // still over → soft beep every 4s
+      state.lastBeepAt = Date.now();
+    }
+  }
+  state.wasOver = over;
+}
+
+/* Web Audio beep + vibration */
+let audioCtx = null;
+function primeAudio() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (e) {}
+}
+function beep(freq, ms, gain) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  g.gain.value = gain;
+  osc.connect(g); g.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + ms / 1000);
+}
+function triggerAlert(firstCross) {
+  if (state.alertSound) {
+    primeAudio();
+    if (firstCross) {
+      beep(1200, 180, 0.25);
+      setTimeout(() => beep(1600, 220, 0.25), 220);
+    } else {
+      beep(1400, 120, 0.18);
+    }
+  }
+  if (state.alertVibe && navigator.vibrate) {
+    navigator.vibrate(firstCross ? [120, 60, 120, 60, 180] : [80]);
   }
 }
 
 /* ================= RENDER ================= */
-function fmtTrip(n) {
-  return n.toFixed(2);
-}
+const fmtTrip = n => n.toFixed(2);
 
 function renderLive() {
   document.getElementById('speed').textContent = Math.round(state.speed);
@@ -256,6 +301,17 @@ function renderLive() {
   document.getElementById('altitude').textContent = Math.round(state.altitude) + ' m';
   document.getElementById('heading').textContent =
     state.heading == null ? '---°' : Math.round(state.heading) + '°';
+
+  // Speed ring progress (0 → maxGauge)
+  const ring = document.getElementById('speedRing');
+  const circ = 339.3; // 2π·54
+  const pct = Math.max(0, Math.min(1, state.speed / state.maxGauge));
+  ring.setAttribute('stroke-dashoffset', (circ * (1 - pct)).toFixed(1));
+
+  // Over-limit visual
+  const over = state.limit != null && state.speed > state.limit + state.tolerance;
+  document.getElementById('speedCircle').classList.toggle('over', over);
+
   renderTrips();
   renderLimit();
 }
@@ -267,29 +323,17 @@ function renderTrips() {
   b.textContent = fmtTrip(state.tripB);
   a.classList.toggle('done', state.mode === 'race' && state.tripA === 0 && state.stageA > 0);
   b.classList.toggle('done', state.mode === 'race' && state.tripB === 0 && state.stageB > 0);
-
-  const sa = document.getElementById('tripAStage');
-  const sb = document.getElementById('tripBStage');
-  if (state.mode === 'race') {
-    sa.classList.remove('hidden');
-    sb.classList.remove('hidden');
-    sa.querySelector('span').textContent = fmtTrip(state.stageA);
-    sb.querySelector('span').textContent = fmtTrip(state.stageB);
-  } else {
-    sa.classList.add('hidden');
-    sb.classList.add('hidden');
-  }
 }
 
 function renderLimit() {
-  const box = document.getElementById('limitBox');
   const el = document.getElementById('limit');
+  const sign = document.getElementById('limitSign');
   if (state.limit == null) {
     el.textContent = '--';
-    box.classList.remove('over');
+    sign.classList.add('off');
   } else {
     el.textContent = state.limit;
-    box.classList.toggle('over', state.speed > state.limit + 3);
+    sign.classList.remove('off');
   }
 }
 
@@ -299,10 +343,6 @@ function renderAll() {
 }
 
 /* ================= TRIP RESET ================= */
-document.querySelectorAll('.trip-action').forEach(btn => {
-  btn.addEventListener('click', () => resetTrip(btn.dataset.trip));
-});
-
 function resetTrip(which) {
   if (state.mode === 'recce') {
     if (which === 'A') state.tripA = 0;
@@ -359,9 +399,12 @@ function openMenu() {
   document.getElementById('stageA').value = state.stageA;
   document.getElementById('stageB').value = state.stageB;
   document.getElementById('calib').value = state.calib;
-  document.getElementById('units').value = state.units;
   document.getElementById('wakeLock').checked = state.wakeOn;
   document.getElementById('limitsOn').checked = state.limitsOn;
+  document.getElementById('alertSound').checked = state.alertSound;
+  document.getElementById('alertVibe').checked = state.alertVibe;
+  document.getElementById('tolerance').value = state.tolerance;
+  document.getElementById('maxGauge').value = state.maxGauge;
   document.getElementById('raceSetup').style.display = state.mode === 'race' ? 'block' : 'none';
   menu.classList.remove('hidden');
 }
@@ -386,21 +429,35 @@ document.getElementById('calib').addEventListener('change', e => {
   }
 });
 
-document.getElementById('units').addEventListener('change', e => {
-  state.units = e.target.value;
-  localStorage.setItem(STORE.units, state.units);
+function bindToggle(id, key, field, onChange) {
+  document.getElementById(id).addEventListener('change', e => {
+    state[field] = e.target.checked;
+    localStorage.setItem(key, state[field]);
+    if (onChange) onChange();
+  });
+}
+bindToggle('wakeLock', STORE.wakeOn, 'wakeOn',
+  () => state.wakeOn ? acquireWakeLock() : releaseWakeLock());
+bindToggle('limitsOn', STORE.limitsOn, 'limitsOn',
+  () => { if (!state.limitsOn) { state.limit = null; renderLimit(); } });
+bindToggle('alertSound', STORE.alertSound, 'alertSound', primeAudio);
+bindToggle('alertVibe', STORE.alertVibe, 'alertVibe');
+
+document.getElementById('tolerance').addEventListener('change', e => {
+  const v = parseInt(e.target.value, 10);
+  if (!isNaN(v) && v >= 0 && v <= 30) {
+    state.tolerance = v;
+    localStorage.setItem(STORE.tolerance, v);
+  }
 });
 
-document.getElementById('wakeLock').addEventListener('change', e => {
-  state.wakeOn = e.target.checked;
-  localStorage.setItem(STORE.wakeOn, state.wakeOn);
-  if (state.wakeOn) acquireWakeLock(); else releaseWakeLock();
-});
-
-document.getElementById('limitsOn').addEventListener('change', e => {
-  state.limitsOn = e.target.checked;
-  localStorage.setItem(STORE.limitsOn, state.limitsOn);
-  if (!state.limitsOn) { state.limit = null; renderLimit(); }
+document.getElementById('maxGauge').addEventListener('change', e => {
+  const v = parseInt(e.target.value, 10);
+  if (!isNaN(v) && v >= 60 && v <= 300) {
+    state.maxGauge = v;
+    localStorage.setItem(STORE.maxGauge, v);
+    renderLive();
+  }
 });
 
 document.getElementById('savePin').addEventListener('click', () => {
@@ -414,9 +471,18 @@ document.getElementById('savePin').addEventListener('click', () => {
   }
 });
 
-/* ================= SERVICE WORKER (offline) ================= */
+/* ================= SERVICE WORKER ================= */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
   });
 }
+
+/* ================= AUTO-START (PIN disabled) ================= */
+window.addEventListener('DOMContentLoaded', () => {
+  showApp();
+  // Prime audio context on first user interaction (iOS requirement)
+  const prime = () => { primeAudio(); document.removeEventListener('touchstart', prime); document.removeEventListener('click', prime); };
+  document.addEventListener('touchstart', prime, { once: true });
+  document.addEventListener('click', prime, { once: true });
+});

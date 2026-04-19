@@ -1,4 +1,4 @@
-const CACHE = 'rally-tripmeter-v1';
+const CACHE = 'rally-tripmeter-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -24,7 +24,7 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  if (url.origin !== location.origin) return; // don't cache Overpass etc.
+  if (url.origin !== location.origin) return;
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(resp => {
       const copy = resp.clone();
