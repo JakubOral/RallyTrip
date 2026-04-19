@@ -68,6 +68,7 @@ button, input, select { font-family: inherit; }
 #app {
   padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom);
   display: flex; flex-direction: column; gap: 8px;
+  min-height: 100vh;
   min-height: 100dvh;
   position: relative;
 }
@@ -95,22 +96,16 @@ button, input, select { font-family: inherit; }
   font-size: 18px; width: 36px; height: 36px;
 }
 
-/* ================= FLOATING SPEED GAUGE (bottom-left) ================= */
-.gauge-float {
-  position: fixed;
-  left: 10px;
-  bottom: calc(env(safe-area-inset-bottom) + 10px);
-  z-index: 50;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.7));
-}
+/* ================= SPEED GAUGE (in bottom bar) ================= */
 .speed-circle {
   position: relative;
-  width: 110px; height: 110px;
+  width: 120px; height: 120px;
   border-radius: 50%;
   background: radial-gradient(circle at 50% 35%, #1d64c7 0%, #0e3a85 60%, #072356 100%);
   box-shadow: 0 4px 12px rgba(0,0,0,0.6), inset 0 0 0 3px #062050;
   display: flex; align-items: center; justify-content: center;
   transition: background 0.3s;
+  flex-shrink: 0;
 }
 .speed-circle.over {
   background: radial-gradient(circle at 50% 35%, #ff4a4a 0%, #c10000 60%, #700000 100%);
@@ -140,18 +135,18 @@ button, input, select { font-family: inherit; }
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 .speed-val {
-  font-size: 44px; font-weight: 900; line-height: 1;
+  font-size: 46px; font-weight: 900; line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 .speed-unit {
-  font-size: 9px; letter-spacing: 2px; opacity: 0.85; margin-top: 2px;
+  font-size: 10px; letter-spacing: 2px; opacity: 0.85; margin-top: 2px;
 }
 
 /* Red-bordered speed-limit sign (road-sign style) */
 .limit-sign {
   position: absolute;
-  right: -14px;
-  top: -10px;
+  right: -12px;
+  top: -8px;
   width: 48px; height: 48px;
   border-radius: 50%;
   background: #fff;
@@ -163,30 +158,44 @@ button, input, select { font-family: inherit; }
 }
 .limit-sign.off { opacity: 0.4; }
 
+/* Bottom bar grid: gauge + extras */
+.bottom-bar {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
 /* ================= MONIT-STYLE LCD (main focus) ================= */
 .monit {
   display: grid;
-  grid-template-columns: 48px 1fr 48px;
+  grid-template-columns: 36px 1fr 36px;
   background: #1a1a1a;
   border-radius: 10px;
-  padding: 6px;
-  gap: 4px;
+  padding: 4px;
+  gap: 3px;
   box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-  flex: 1;
+  flex: 1 1 auto;
   min-height: 0;
 }
+.monit-side { min-height: 0; }
 .monit-side {
-  display: flex; flex-direction: column; justify-content: space-between;
-  padding: 4px 0; gap: 4px;
+  display: flex; flex-direction: column; justify-content: stretch;
+  gap: 3px;
 }
-.monit-side .side-icon {
+.rail-cell {
+  flex: 1;
   display: flex; align-items: center; justify-content: center;
-  height: 44px; color: var(--lcd-ink);
   background: var(--lcd-bg);
   border-radius: 4px;
-  font-size: 24px; font-weight: 900;
+  color: var(--lcd-ink);
 }
-.monit-side .side-icon.flex { font-size: 20px; border: 2px solid var(--lcd-ink); }
+.rail-cell .rail-letter {
+  font-family: "Courier New", monospace;
+  font-size: 30px; font-weight: 900;
+}
+.rail-cell.rail-a { background: linear-gradient(180deg, #fff2b3 0%, var(--lcd-bg) 100%); }
+.rail-cell.rail-b { background: linear-gradient(180deg, #b3e8ff 0%, var(--lcd-bg) 100%); }
 
 .monit-side .side-btn {
   flex: 1;
@@ -203,53 +212,68 @@ button, input, select { font-family: inherit; }
 .monit-side .side-btn span {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
-  font-size: 16px; letter-spacing: 4px;
+  font-size: 13px; letter-spacing: 3px;
 }
 
 .monit-screen {
+  position: relative;
   background: linear-gradient(180deg, var(--lcd-bg) 0%, var(--lcd-bg-2) 100%);
   border-radius: 6px;
-  padding: 14px 18px 16px;
-  display: flex; flex-direction: column; justify-content: space-around;
+  padding: 18px 10px 18px;
+  display: flex; flex-direction: column;
+  gap: 4px;
   min-height: 0;
 }
-
-.trip-row { text-align: right; }
-.trip-num {
+.mode-badge {
+  position: absolute;
+  top: 4px; left: 8px;
   font-family: "Courier New", monospace;
+  font-size: 11px;
   font-weight: 900;
   color: var(--lcd-ink);
-  font-size: clamp(72px, 20vw, 140px);
-  line-height: 1;
-  letter-spacing: 2px;
-  font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 1px rgba(12,26,74,0.3);
+  letter-spacing: 1px;
+  opacity: 0.55;
 }
-.trip-row.trip-a .trip-num,
-.trip-row.trip-b .trip-num { color: var(--lcd-ink); }
+
+.trip-row {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex; align-items: center; justify-content: flex-end;
+  overflow: hidden;
+}
+.trip-divider {
+  height: 2px;
+  background: rgba(12,26,74,0.15);
+  flex: 0 0 2px;
+}
+.trip-num {
+  font-family: "Courier New", "Consolas", monospace;
+  font-weight: 900;
+  color: var(--lcd-ink);
+  line-height: 0.9;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  /* font-size set by JS auto-fit — fills both dimensions, never distorted */
+  white-space: nowrap;
+}
+.trip-num.done { color: var(--danger); }
 .trip-unit {
-  font-size: 18px; color: var(--lcd-ink-soft);
+  position: absolute;
+  right: 4px; bottom: 2px;
+  font-size: 11px; color: var(--lcd-ink-soft);
   font-family: "Courier New", monospace;
-  text-align: right; margin-top: 2px; letter-spacing: 1px;
+  letter-spacing: 1px;
+  line-height: 1;
 }
 .trip-num.done { color: var(--danger); animation: blink 0.5s 6; }
 @keyframes blink { 50% { opacity: 0.3; } }
 
-/* Quick reset buttons */
-.reset-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.reset-btn {
-  padding: 12px 0;
-  border: 0; border-radius: 8px;
-  font-size: 14px; font-weight: 900; letter-spacing: 2px;
-  color: #000;
-}
-.reset-btn.trip-a { background: var(--accent); }
-.reset-btn.trip-b { background: var(--accent-2); }
-.reset-btn:active { filter: brightness(0.85); }
-
-/* Extras */
+/* Extras — compact 2x2 grid beside speed circle */
 .extras {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
 .extra {
   background: var(--bg-soft); border: 1px solid #2a3f55; border-radius: 6px;
@@ -260,8 +284,9 @@ button, input, select { font-family: inherit; }
   font-weight: 900; letter-spacing: 2px;
 }
 .extra > div:last-child {
-  font-size: 20px; font-weight: 900; color: #fff;
+  font-size: 18px; font-weight: 900; color: #fff;
   margin-top: 2px; font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ================= MENU ================= */
@@ -308,19 +333,31 @@ button, input, select { font-family: inherit; }
 .btn.close { background: var(--bg-soft); color: #fff; margin-top: 8px; border: 1px solid #2a3f55; }
 .btn:active { opacity: 0.85; }
 
-/* Smaller screens — scale the floating gauge down */
+/* Smaller screens */
 @media (max-height: 680px) {
-  .speed-circle { width: 96px; height: 96px; }
-  .speed-val { font-size: 36px; }
+  .speed-circle { width: 104px; height: 104px; }
+  .speed-val { font-size: 40px; }
   .limit-sign { width: 42px; height: 42px; font-size: 18px; border-width: 4px; }
+  .rail-cell .rail-letter { font-size: 26px; }
+  .extra > div:last-child { font-size: 16px; }
 }
 @media (max-height: 580px) {
-  .speed-circle { width: 84px; height: 84px; }
-  .speed-val { font-size: 32px; }
-  .speed-unit { font-size: 8px; }
+  .speed-circle { width: 92px; height: 92px; }
+  .speed-val { font-size: 34px; }
+  .speed-unit { font-size: 9px; }
+  .rail-cell .rail-letter { font-size: 22px; }
+  .monit { grid-template-columns: 30px 1fr 30px; }
+}
+@media (max-width: 340px) {
+  .monit { grid-template-columns: 28px 1fr 28px; }
+  .trip-num { font-size: min(22vw, 22vh); letter-spacing: -0.03em; }
 }
 
-/* Keep extras clear of the floating gauge */
-.extras { margin-left: 125px; }
-@media (max-height: 680px) { .extras { margin-left: 110px; } }
-@media (max-height: 580px) { .extras { margin-left: 95px; } }
+/* Landscape */
+@media (orientation: landscape) and (max-height: 500px) {
+  #app { flex-direction: row; flex-wrap: wrap; }
+  .topbar { width: 100%; }
+  .monit { flex: 1 1 65%; }
+  .bottom-bar { flex: 1 1 32%; grid-template-columns: 1fr; }
+  .trip-num { font-size: min(14vw, 32vh); }
+}

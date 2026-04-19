@@ -88,6 +88,7 @@ function showApp() {
   startClock();
   if (state.wakeOn) acquireWakeLock();
   renderAll();
+  requestAnimationFrame(fitTripDigits);
 }
 
 function logout() {
@@ -114,7 +115,7 @@ function setMode(m) {
   document.getElementById('btnRecce').classList.toggle('active', m === 'recce');
   document.getElementById('btnRace').classList.toggle('active', m === 'race');
   document.getElementById('raceSetup').style.display = m === 'race' ? 'block' : 'none';
-  document.getElementById('iconMode').textContent = m === 'race' ? '▼' : '▲';
+  document.getElementById('iconMode').textContent = m === 'race' ? '▼ RACE' : '▲ RECCE';
   renderTrips();
 }
 
@@ -127,9 +128,9 @@ document.getElementById('btnClr').addEventListener('click', () => {
   else { resetTrip('A'); resetTrip('B'); }
 });
 
-document.querySelectorAll('.reset-btn').forEach(btn => {
-  btn.addEventListener('click', () => resetTrip(btn.dataset.trip));
-});
+/* Tap on a trip row directly to reset it */
+document.getElementById('tripAWrap').addEventListener('click', () => resetTrip('A'));
+document.getElementById('tripBWrap').addEventListener('click', () => resetTrip('B'));
 
 /* ================= GPS ================= */
 let watchId = null;
@@ -321,9 +322,33 @@ function renderTrips() {
   const b = document.getElementById('tripB');
   a.textContent = fmtTrip(state.tripA);
   b.textContent = fmtTrip(state.tripB);
-  a.classList.toggle('done', state.mode === 'race' && state.tripA === 0 && state.stageA > 0);
-  b.classList.toggle('done', state.mode === 'race' && state.tripB === 0 && state.stageB > 0);
+  const aDone = state.mode === 'race' && state.tripA === 0 && state.stageA > 0;
+  const bDone = state.mode === 'race' && state.tripB === 0 && state.stageB > 0;
+  a.classList.toggle('done', aDone);
+  b.classList.toggle('done', bDone);
+  fitTripDigits();
 }
+
+/* Auto-fit each trip digit row: biggest font-size that fits width AND height */
+function fitTripDigits() {
+  ['tripA', 'tripB'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const row = el.parentElement;
+    const w = row.clientWidth;
+    const h = row.clientHeight;
+    if (!w || !h) return;
+    // Monospace Courier: ~0.6em per char after tight letter-spacing. "99.99" = 5 chars.
+    // Cap height ~0.72em. Use 0.8 for safety to avoid vertical clipping.
+    const fsByWidth  = w / (5 * 0.60);
+    const fsByHeight = h / 0.80;
+    const fs = Math.max(24, Math.min(fsByWidth, fsByHeight));
+    el.style.fontSize = fs + 'px';
+  });
+}
+
+window.addEventListener('resize', fitTripDigits);
+window.addEventListener('orientationchange', () => setTimeout(fitTripDigits, 150));
 
 function renderLimit() {
   const el = document.getElementById('limit');

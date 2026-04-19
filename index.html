@@ -53,14 +53,16 @@
   <!-- MONIT-STYLE TRIPMETER PANEL (main focus) -->
   <div class="monit" id="monit">
     <div class="monit-side left">
-      <div class="side-icon" id="iconMode">▲</div>
-      <div class="side-icon flex" title="Reset both">↔</div>
+      <div class="rail-cell rail-a"><span class="rail-letter">A</span></div>
+      <div class="rail-cell rail-b"><span class="rail-letter">B</span></div>
     </div>
 
     <div class="monit-screen">
+      <div class="mode-badge" id="iconMode">▲ RECCE</div>
       <div class="trip-row trip-a" id="tripAWrap">
         <div class="trip-num" id="tripA">0.00</div>
       </div>
+      <div class="trip-divider"></div>
       <div class="trip-row trip-b" id="tripBWrap">
         <div class="trip-num" id="tripB">0.00</div>
         <div class="trip-unit">dist</div>
@@ -73,14 +75,8 @@
     </div>
   </div>
 
-  <!-- QUICK RESET ROW -->
-  <div class="reset-row">
-    <button class="reset-btn trip-a" data-trip="A">RESET A</button>
-    <button class="reset-btn trip-b" data-trip="B">RESET B</button>
-  </div>
-
-  <!-- FLOATING SPEED GAUGE (bottom-left overlay) -->
-  <div class="gauge-float" id="gaugeFloat">
+  <!-- BOTTOM BAR: speed gauge + extras -->
+  <div class="bottom-bar">
     <div class="speed-circle" id="speedCircle">
       <svg class="speed-ring" viewBox="0 0 120 120">
         <circle cx="60" cy="60" r="54" class="ring-bg"></circle>
@@ -91,18 +87,17 @@
         <div id="speed" class="speed-val">0</div>
         <div class="speed-unit">km/h</div>
       </div>
+      <div class="limit-sign" id="limitSign">
+        <div id="limit">--</div>
+      </div>
     </div>
-    <div class="limit-sign" id="limitSign">
-      <div id="limit">--</div>
-    </div>
-  </div>
 
-  <!-- EXTRA INFO -->
-  <div class="extras">
-    <div class="extra"><div class="label">HDG</div><div id="heading">---°</div></div>
-    <div class="extra"><div class="label">AVG</div><div id="avgSpeed">0</div></div>
-    <div class="extra"><div class="label">MAX</div><div id="maxSpeed">0</div></div>
-    <div class="extra"><div class="label">ALT</div><div id="altitude">0 m</div></div>
+    <div class="extras">
+      <div class="extra"><div class="label">HDG</div><div id="heading">---°</div></div>
+      <div class="extra"><div class="label">AVG</div><div id="avgSpeed">0</div></div>
+      <div class="extra"><div class="label">MAX</div><div id="maxSpeed">0</div></div>
+      <div class="extra"><div class="label">ALT</div><div id="altitude">0 m</div></div>
+    </div>
   </div>
 
 </section>
