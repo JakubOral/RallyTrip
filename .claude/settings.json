@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(py --version)",
+      "Bash(node server.js 8080)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8080/)",
+      "Bash(npx -y localtunnel --port 8080)",
+      "Bash(curl -s https://loca.lt/mytunnelpassword)",
+      "Bash(curl -s https://api.ipify.org)",
+      "Bash(where cloudflared *)",
+      "Bash(where ngrok *)",
+      "Bash(where ssh *)",
+      "Bash(where openssl *)",
+      "Bash(mkdir -p certs)",
+      "Bash(openssl req *)"
+    ]
+  }
+}

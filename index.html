@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#000000" />
+<title>RALLY TRIPMETER</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icons/icon.svg" />
+<link rel="icon" href="icons/icon.svg" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- LOGIN -->
+<section id="login" class="screen active">
+  <div class="login-box">
+    <h1>RALLY<br><span>TRIPMETER</span></h1>
+    <div id="pinDisplay" class="pin-dots">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div class="keypad">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <button data-k="clear" class="alt">C</button>
+      <button data-k="0">0</button>
+      <button data-k="del" class="alt">&larr;</button>
+    </div>
+    <p id="pinMsg" class="msg"></p>
+    <p class="hint">Default PIN: 1234</p>
+  </div>
+</section>
+
+<!-- MAIN APP -->
+<section id="app" class="screen">
+
+  <header class="topbar">
+    <div class="mode-switch">
+      <button id="btnRecce" class="mode active">RECCE</button>
+      <button id="btnRace" class="mode">RACE</button>
+    </div>
+    <div class="status">
+      <span id="gpsStatus" class="badge bad">GPS</span>
+      <span id="clock">--:--</span>
+      <button id="btnMenu" class="icon-btn">☰</button>
+    </div>
+  </header>
+
+  <!-- SPEED + LIMIT -->
+  <div class="speed-row">
+    <div class="speed-box">
+      <div class="label">SPEED km/h</div>
+      <div id="speed" class="big-num">0</div>
+    </div>
+    <div class="limit-box" id="limitBox">
+      <div class="label">LIMIT</div>
+      <div id="limit" class="big-num">--</div>
+    </div>
+  </div>
+
+  <!-- TRIP A -->
+  <div class="trip trip-a" id="tripAWrap">
+    <div class="trip-head">
+      <span class="trip-label">TRIP A</span>
+      <span class="trip-unit">km</span>
+      <button class="trip-action" data-trip="A">RESET</button>
+    </div>
+    <div id="tripA" class="trip-num">0.00</div>
+    <div id="tripAStage" class="trip-sub hidden">STAGE: <span>0.00</span> km</div>
+  </div>
+
+  <!-- TRIP B -->
+  <div class="trip trip-b" id="tripBWrap">
+    <div class="trip-head">
+      <span class="trip-label">TRIP B</span>
+      <span class="trip-unit">km</span>
+      <button class="trip-action" data-trip="B">RESET</button>
+    </div>
+    <div id="tripB" class="trip-num">0.00</div>
+    <div id="tripBStage" class="trip-sub hidden">STAGE: <span>0.00</span> km</div>
+  </div>
+
+  <!-- EXTRA INFO -->
+  <div class="extras">
+    <div class="extra"><div class="label">HDG</div><div id="heading">---°</div></div>
+    <div class="extra"><div class="label">AVG</div><div id="avgSpeed">0</div></div>
+    <div class="extra"><div class="label">MAX</div><div id="maxSpeed">0</div></div>
+    <div class="extra"><div class="label">ALT</div><div id="altitude">0 m</div></div>
+  </div>
+
+</section>
+
+<!-- MENU OVERLAY -->
+<div id="menu" class="overlay hidden">
+  <div class="menu-panel">
+    <h2>MENU</h2>
+
+    <div class="menu-group" id="raceSetup">
+      <h3>RACE STAGE</h3>
+      <label>Trip A distance (km)
+        <input type="number" id="stageA" step="0.01" min="0" value="0" />
+      </label>
+      <label>Trip B distance (km)
+        <input type="number" id="stageB" step="0.01" min="0" value="0" />
+      </label>
+      <button class="btn" id="applyStage">APPLY STAGE</button>
+    </div>
+
+    <div class="menu-group">
+      <h3>CALIBRATION</h3>
+      <label>Factor (1.000 = no change)
+        <input type="number" id="calib" step="0.001" min="0.5" max="1.5" value="1.000" />
+      </label>
+    </div>
+
+    <div class="menu-group">
+      <h3>SETTINGS</h3>
+      <label class="row">Units
+        <select id="units"><option value="km">km</option><option value="mi">miles</option></select>
+      </label>
+      <label class="row">Keep screen on
+        <input type="checkbox" id="wakeLock" checked />
+      </label>
+      <label class="row">Speed limits (OSM)
+        <input type="checkbox" id="limitsOn" checked />
+      </label>
+    </div>
+
+    <div class="menu-group">
+      <h3>PIN</h3>
+      <label>Change PIN (4 digits)
+        <input type="password" id="newPin" inputmode="numeric" maxlength="4" />
+      </label>
+      <button class="btn" id="savePin">SAVE PIN</button>
+    </div>
+
+    <button class="btn danger" id="logout">LOGOUT</button>
+    <button class="btn close" id="closeMenu">CLOSE</button>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,325 @@
+/* RALLY TRIPMETER — sun-readable high-contrast theme */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  color: #fff;
+  font-family: "Arial Black", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+button, input, select { font-family: inherit; }
+
+.screen { display: none; width: 100vw; min-height: 100vh; min-height: 100dvh; }
+.screen.active { display: block; }
+.hidden { display: none !important; }
+
+/* ================= LOGIN ================= */
+#login {
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  background: #000;
+}
+.login-box {
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 28px 20px 24px;
+  text-align: center;
+}
+.login-box h1 {
+  color: #ffcc00;
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+.login-box h1 span { color: #fff; font-size: 28px; }
+
+.pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin: 30px 0 22px;
+}
+.pin-dots span {
+  width: 22px; height: 22px;
+  border: 3px solid #ffcc00;
+  border-radius: 50%;
+  background: transparent;
+}
+.pin-dots span.filled { background: #ffcc00; }
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 10px;
+}
+.keypad button {
+  font-size: 32px;
+  font-weight: 900;
+  height: 72px;
+  background: #111;
+  color: #fff;
+  border: 2px solid #333;
+  border-radius: 10px;
+}
+.keypad button:active { background: #ffcc00; color: #000; }
+.keypad .alt { color: #ffcc00; font-size: 24px; }
+
+.msg { color: #ff4040; font-size: 14px; min-height: 20px; margin-top: 14px; }
+.msg.ok { color: #7cff7c; }
+.hint { color: #888; font-size: 11px; margin-top: 6px; letter-spacing: 1px; }
+
+/* ================= APP ================= */
+#app {
+  padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 2px;
+}
+.mode-switch { display: flex; background: #111; border-radius: 6px; overflow: hidden; border: 2px solid #333; }
+.mode-switch .mode {
+  background: transparent;
+  color: #888;
+  border: 0;
+  font-weight: 900;
+  letter-spacing: 2px;
+  font-size: 14px;
+  padding: 8px 12px;
+}
+.mode-switch .mode.active { background: #ffcc00; color: #000; }
+
+.status { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+.badge.bad { background: #4a0000; color: #ff5050; }
+.badge.ok { background: #003a00; color: #00ff60; }
+#clock { color: #fff; font-weight: 900; font-size: 16px; min-width: 54px; text-align: right; }
+
+.icon-btn {
+  background: #111;
+  color: #fff;
+  border: 2px solid #333;
+  border-radius: 6px;
+  font-size: 18px;
+  width: 36px; height: 36px;
+}
+
+/* Speed + limit */
+.speed-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 8px;
+}
+.speed-box, .limit-box {
+  background: #0a0a0a;
+  border: 2px solid #222;
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: center;
+}
+.limit-box.over {
+  background: #ff1111;
+  border-color: #ff5050;
+  animation: blink 0.6s infinite;
+}
+@keyframes blink { 50% { background: #000; } }
+
+.label {
+  color: #aaa;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+.big-num {
+  font-size: 72px;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.limit-box .big-num { color: #ffcc00; font-size: 54px; }
+
+/* Trips */
+.trip {
+  background: #0a0a0a;
+  border: 2px solid;
+  border-radius: 10px;
+  padding: 8px 12px 10px;
+}
+.trip-a { border-color: #ffcc00; }
+.trip-b { border-color: #00c8ff; }
+
+.trip-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.trip-label {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 3px;
+}
+.trip-a .trip-label { color: #ffcc00; }
+.trip-b .trip-label { color: #00c8ff; }
+.trip-unit { color: #888; font-size: 12px; }
+.trip-action {
+  background: #222;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+.trip-action:active { background: #ffcc00; color: #000; }
+
+.trip-num {
+  font-size: 64px;
+  font-weight: 900;
+  line-height: 1;
+  margin-top: 2px;
+  color: #fff;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.trip-a .trip-num { color: #ffcc00; }
+.trip-b .trip-num { color: #00c8ff; }
+.trip-num.done { color: #ff3030; animation: blink 0.5s 6; }
+
+.trip-sub {
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 1px;
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* Extras */
+.extras {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.extra {
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 6px;
+  padding: 6px 4px;
+  text-align: center;
+}
+.extra .label { font-size: 10px; }
+.extra > div:last-child {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================= MENU ================= */
+.overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 100;
+  overflow-y: auto;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+.menu-panel {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px 18px 30px;
+}
+.menu-panel h2 {
+  color: #ffcc00;
+  font-size: 24px;
+  letter-spacing: 3px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.menu-group {
+  background: #0a0a0a;
+  border: 1px solid #222;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.menu-group h3 {
+  font-size: 13px;
+  color: #ffcc00;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+}
+.menu-group label {
+  display: block;
+  font-size: 12px;
+  color: #aaa;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.menu-group label.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.menu-group input, .menu-group select {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px;
+  background: #000;
+  color: #fff;
+  border: 2px solid #333;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: 900;
+}
+.menu-group label.row input, .menu-group label.row select {
+  width: auto;
+  margin-top: 0;
+}
+
+.btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 6px;
+  background: #ffcc00;
+  color: #000;
+  border: 0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+.btn.danger { background: #aa0000; color: #fff; margin-top: 20px; }
+.btn.close { background: #222; color: #fff; margin-top: 8px; }
+.btn:active { opacity: 0.85; }
+
+/* iPhone 6s landscape tweaks */
+@media (orientation: landscape) and (max-height: 500px) {
+  .big-num { font-size: 56px; }
+  .trip-num { font-size: 48px; }
+  .speed-row, .trip { padding: 6px 10px; }
+}
